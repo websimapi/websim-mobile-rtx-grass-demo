@@ -38,7 +38,7 @@ renderer.toneMappingExposure = 1.0;
 // Managers
 const sceneManager = new SceneManager(renderer);
 const camera = sceneManager.camera;
-const controls = new Controls(camera, document.body);
+const controls = new Controls(camera, document.body, sceneManager);
 const postProcessing = new PostProcessing(renderer, sceneManager.scene, camera, state.width, state.height);
 
 // Audio

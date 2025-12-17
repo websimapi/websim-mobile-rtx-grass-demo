@@ -2,9 +2,10 @@ import * as THREE from 'three';
 import nipplejs from 'nipplejs';
 
 export class Controls {
-    constructor(camera, domElement) {
+    constructor(camera, domElement, sceneManager) {
         this.camera = camera;
         this.domElement = domElement;
+        this.sceneManager = sceneManager;
         
         // State
         this.moveVector = new THREE.Vector3(0, 0, 0);
@@ -146,11 +147,17 @@ export class Controls {
 
         this.camera.position.add(direction);
         
-        // Simple ground collision
-        // Assume player height is 1.7
-        // We'd need to sample terrain height here ideally.
-        // For now, simple clamp above 0.5
-        if (this.camera.position.y < 2) this.camera.position.y = 2; 
+        // Ground collision
+        if (this.sceneManager && this.sceneManager.terrain) {
+            const h = this.sceneManager.terrain.getHeightAt(this.camera.position.x, this.camera.position.z);
+            const targetY = h + 1.7;
+            
+            // Smooth adjustment
+            this.camera.position.y += (targetY - this.camera.position.y) * delta * 15;
+            
+            // Prevent sinking
+            if (this.camera.position.y < targetY) this.camera.position.y = targetY;
+        }
     }
 }
 

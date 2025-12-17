@@ -8,10 +8,17 @@ export class TerrainChunk {
         this.mesh = null;
         this.geometry = null;
         this.heightData = [];
+        this.noise2D = createNoise2D();
+    }
+
+    _computeHeight(x, z) {
+        let y = this.noise2D(x * 0.02, z * 0.02) * 4;
+        y += this.noise2D(x * 0.1, z * 0.1) * 0.5;
+        y += this.noise2D(x * 0.5, z * 0.5) * 0.1;
+        return y;
     }
 
     async generate() {
-        const noise2D = createNoise2D();
         this.geometry = new THREE.PlaneGeometry(this.size, this.size, this.resolution, this.resolution);
         this.geometry.rotateX(-Math.PI / 2);
 
@@ -24,13 +31,7 @@ export class TerrainChunk {
             const x = posAttribute.getX(i);
             const z = posAttribute.getZ(i);
             
-            // Multiple octaves of noise
-            let y = noise2D(x * 0.02, z * 0.02) * 4;
-            y += noise2D(x * 0.1, z * 0.1) * 0.5;
-            y += noise2D(x * 0.5, z * 0.5) * 0.1;
-            
-            // Flatten edges to blend into fog if we had infinite terrain, 
-            // but for this scene, we make a bowl shape? No, just infinite plane illusion.
+            const y = this._computeHeight(x, z);
             
             posAttribute.setY(i, y);
             this.heightData.push(y);
@@ -88,11 +89,7 @@ export class TerrainChunk {
 
     // Helper to get height at specific x,z
     getHeightAt(x, z) {
-        // Raycaster is accurate but slow. 
-        // For grass placement, we can just use the noise function again if we kept the seed/logic,
-        // or raycast once during init.
-        // For now, we will use raycaster in the Grass system setup.
-        return 0; 
+        return this._computeHeight(x, z);
     }
 }
 
