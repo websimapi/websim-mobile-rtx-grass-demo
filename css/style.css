@@ -1,0 +1,207 @@
+:root {
+    --accent: #00ff88;
+    --bg: #111;
+    --glass: rgba(0, 0, 0, 0.6);
+}
+
+body {
+    margin: 0;
+    overflow: hidden;
+    background-color: var(--bg);
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    color: white;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+}
+
+#loader {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    transition: opacity 0.5s ease;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #333;
+    border-top: 4px solid var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+#ui-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.header {
+    padding: 20px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+h1 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+}
+
+.accent {
+    color: var(--accent);
+    text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+}
+
+.fps-counter {
+    font-family: monospace;
+    font-size: 0.9rem;
+    color: #888;
+}
+
+.controls-overlay {
+    pointer-events: auto;
+    position: absolute;
+    top: 80px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.toggle-group {
+    display: flex;
+    align-items: center;
+    background: var(--glass);
+    padding: 10px 15px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.1);
+    backdrop-filter: blur(5px);
+}
+
+.status {
+    font-size: 0.7rem;
+    margin-left: 10px;
+    color: #aaa;
+    width: 25px;
+}
+
+/* Switch Styles */
+.switch-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.switch-label input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 20px;
+    background-color: #555;
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 14px;
+    width: 14px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: var(--accent);
+    box-shadow: 0 0 10px var(--accent);
+}
+
+input:checked + .slider:before {
+    transform: translateX(20px);
+}
+
+/* Joystick Zones */
+#zone-joystick {
+    position: absolute;
+    bottom: 50px;
+    left: 50px;
+    width: 150px;
+    height: 150px;
+    pointer-events: auto;
+    /* Visual indicator for zone */
+    /* border: 1px dashed rgba(255,255,255,0.1); */
+    border-radius: 50%;
+}
+
+#zone-look {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 50%;
+    height: 100%;
+    pointer-events: auto;
+    touch-action: none;
+}
+
+.instruction {
+    position: absolute;
+    bottom: 20px;
+    width: 100%;
+    text-align: center;
+    font-size: 0.8rem;
+    opacity: 0.7;
+    text-shadow: 0 1px 2px black;
+}
+
+.mobile-hint { display: none; }
+
+@media (max-width: 768px) {
+    .desktop-hint { display: none; }
+    .mobile-hint { display: inline; }
+    #zone-joystick {
+        bottom: 30px;
+        left: 30px;
+    }
+}
+

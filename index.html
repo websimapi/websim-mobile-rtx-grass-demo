@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mobile RTX Grass Demo</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://esm.sh/three@0.160.0",
+            "three/addons/": "https://esm.sh/three@0.160.0/examples/jsm/",
+            "nipplejs": "https://esm.sh/nipplejs@0.10.1",
+            "simplex-noise": "https://esm.sh/simplex-noise@4.0.1"
+        }
+    }
+    </script>
+</head>
+<body>
+    <div id="loader">
+        <div class="spinner"></div>
+        <div id="loading-text">Generating Terrain & Baking Lighting...</div>
+    </div>
+
+    <div id="ui-container">
+        <div class="header">
+            <h1>TERRAIN <span class="accent">RTX</span></h1>
+            <div class="fps-counter" id="fps">60 FPS</div>
+        </div>
+        
+        <div class="controls-overlay">
+            <div class="toggle-group">
+                <label class="switch-label">
+                    <span>RTX MODE</span>
+                    <input type="checkbox" id="rtx-toggle">
+                    <span class="slider round"></span>
+                </label>
+                <div class="status" id="rtx-status">OFF</div>
+            </div>
+            
+            <div class="toggle-group">
+                <label class="switch-label">
+                    <span>WIND</span>
+                    <input type="checkbox" id="wind-toggle" checked>
+                    <span class="slider round"></span>
+                </label>
+            </div>
+        </div>
+
+        <div id="zone-joystick"></div>
+        <div id="zone-look"></div>
+        
+        <div class="instruction">
+            <span class="desktop-hint">WASD to Move • Drag to Look</span>
+            <span class="mobile-hint">Left Stick Move • Right Side Look</span>
+        </div>
+    </div>
+
+    <script type="module" src="js/main.js"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4c6229722a6346bc8eb5cb0e5eae5d41","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
+
