@@ -63,6 +63,7 @@ rtxToggle.addEventListener('change', (e) => {
     rtxStatus.innerText = state.rtxEnabled ? "ON" : "OFF";
     rtxStatus.style.color = state.rtxEnabled ? "var(--accent)" : "#aaa";
     sceneManager.setRTXMode(state.rtxEnabled);
+    postProcessing.setRTX(state.rtxEnabled);
 });
 
 windToggle.addEventListener('change', (e) => {
@@ -109,7 +110,7 @@ function animate(time) {
 
     // Logic
     controls.update(delta);
-    sceneManager.update(time / 1000, delta); // Pass time in seconds
+    sceneManager.update(time / 1000, delta, state.rtxEnabled); 
 
     // Render
     if (state.rtxEnabled) {

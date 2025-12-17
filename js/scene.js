@@ -62,22 +62,31 @@ export class SceneManager {
         this.scene.add(this.grass.mesh);
     }
 
-    update(time, delta) {
-        if (this.grass) this.grass.update(time);
-        
-        // Ensure sun follows mostly but stays static relative to terrain for shadows
-        // Or keep sun static. Static is better for baked shadow illusion.
+    update(time, delta, rtxEnabled) {
+        if (this.grass) this.grass.update(time, this.sunLight.position, rtxEnabled);
     }
 
     setRTXMode(enabled) {
         // Adjust lighting intensity if needed for post-processing
         if (enabled) {
             this.sunLight.intensity = 3.0;
-            this.scene.fog.density = 0.01; // Less fog to see bloom
+            this.scene.fog.density = 0.01; 
+            // Improve shadows
+            this.sunLight.shadow.mapSize.width = 4096;
+            this.sunLight.shadow.mapSize.height = 4096;
+            this.sunLight.shadow.bias = -0.0001; // Tighter bias
         } else {
             this.sunLight.intensity = 2.0;
             this.scene.fog.density = 0.02;
+            // Lower shadows for perf
+            this.sunLight.shadow.mapSize.width = 2048;
+            this.sunLight.shadow.mapSize.height = 2048;
+            this.sunLight.shadow.bias = -0.0005;
         }
+        
+        // Force update of shadow map
+        this.sunLight.shadow.map.dispose();
+        this.sunLight.shadow.map = null;
     }
 
     setWind(strength) {

@@ -25,8 +25,9 @@ export class PostProcessing {
         // 1. SSAO (Screen Space Ambient Occlusion) - The core of "RTX" look for geometry
         this.ssaoPass = new SSAOPass(this.scene, this.camera, this.width, this.height);
         this.ssaoPass.kernelRadius = 16; // Bigger radius for terrain
-        this.ssaoPass.minDistance = 0.005;
-        this.ssaoPass.maxDistance = 0.1;
+        this.ssaoPass.minDistance = 0.001;
+        this.ssaoPass.maxDistance = 0.15;
+        // Output AO directly? No, blend.
         this.composer.addPass(this.ssaoPass);
 
         // 2. Bloom - High dynamic range glow
@@ -60,6 +61,19 @@ export class PostProcessing {
 
     render() {
         this.composer.render();
+    }
+    
+    setRTX(enabled) {
+        // Boost bloom and SSAO in RTX mode
+        if(enabled) {
+            this.ssaoPass.kernelRadius = 32;
+            this.bloomPass.strength = 1.2;
+            this.bloomPass.radius = 0.8;
+        } else {
+            this.ssaoPass.kernelRadius = 16;
+            this.bloomPass.strength = 0.8;
+            this.bloomPass.radius = 0.5;
+        }
     }
 }
 

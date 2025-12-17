@@ -1,9 +1,12 @@
 import * as THREE from 'three';
 
-// Grass Vertex Shader
+// Grass Vertex Shader (RTX Ready)
 const vertexShader = `
   varying vec2 vUv;
   varying vec3 vColor;
+  varying vec3 vNormal;
+  varying vec3 vViewPosition;
+  varying vec3 vWorldPosition;
   
   uniform float time;
   uniform float windStrength;
@@ -11,63 +14,104 @@ const vertexShader = `
   attribute float scale;
   attribute vec3 instanceColor;
   
-  // Simple noise function
-  float noise(vec2 st) {
-      return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
-  }
-  
   void main() {
     vUv = uv;
     vColor = instanceColor;
     
+    // Base position
     vec3 pos = position;
-    
-    // Scale the blade
     pos *= scale;
     
-    // Wind Animation
-    // Only move the top vertices (uv.y > 0.0)
-    // We assume the grass blade geometry has uv.y 0 at bottom and 1 at top
-    float heightFactor = pow(uv.y, 2.0); // Curve bent
+    // Wind Logic
+    float heightFactor = pow(uv.y, 2.0);
+    float x = instanceMatrix[3][0];
+    float z = instanceMatrix[3][2];
     
-    // Global wind direction and wave
-    float wave = sin(time * 2.0 + instanceMatrix[3][0] * 0.5 + instanceMatrix[3][2] * 0.5);
-    float windOffset = wave * 0.3 * windStrength * heightFactor;
+    // Complex Wind: Layered waves
+    float wave1 = sin(time * 1.0 + x * 0.5 + z * 0.5);
+    float wave2 = sin(time * 2.5 + x * 1.5 + z * 0.2); 
     
-    // Add some random turbulence
-    float turb = sin(time * 5.0 + instanceMatrix[3][0]) * 0.1 * windStrength * heightFactor;
+    float combinedWave = (wave1 + wave2 * 0.5) * windStrength;
     
-    pos.x += windOffset + turb;
-    pos.z += (windOffset * 0.5) + turb; // Diagonal wind
+    float xOffset = combinedWave * 0.25 * heightFactor;
+    float zOffset = cos(time * 0.8 + x) * 0.1 * windStrength * heightFactor;
     
-    // Apply curvature based on wind
-    pos.y -= abs(windOffset) * 0.5; // Dip down when bending
+    pos.x += xOffset;
+    pos.z += zOffset;
     
-    vec4 mvPosition = modelViewMatrix * instanceMatrix * vec4(pos, 1.0);
+    // Curvature preservation (approx)
+    pos.y -= abs(xOffset) * 0.2;
+    
+    // Calculate Normal (Approximation for bending)
+    vec3 objectNormal = vec3(0.0, 0.0, 1.0);
+    objectNormal.x -= xOffset * 2.0; 
+    objectNormal = normalize(objectNormal);
+    
+    // World Position
+    vec4 worldPos = instanceMatrix * vec4(pos, 1.0);
+    vWorldPosition = worldPos.xyz;
+    
+    // View Position
+    vec4 mvPosition = modelViewMatrix * worldPos;
+    vViewPosition = -mvPosition.xyz;
+    
+    // Normal in View Space
+    vNormal = normalize(normalMatrix * mat3(instanceMatrix) * objectNormal);
+    
     gl_Position = projectionMatrix * mvPosition;
   }
 `;
 
-// Grass Fragment Shader
+// Grass Fragment Shader - High Fidelity PBR approximation
 const fragmentShader = `
   varying vec2 vUv;
   varying vec3 vColor;
+  varying vec3 vNormal;
+  varying vec3 vViewPosition;
+  
+  uniform vec3 sunPosition;
+  uniform float rtxEnabled; 
   
   void main() {
-    // Shape the blade with alpha texture or math
-    // Let's use math for a tapered blade
-    float width = 1.0 - pow(abs(vUv.x * 2.0 - 1.0), 3.0); // Tapered X
-    // Cut off if width is too small (fake transparency)
-    if (width < 0.2) discard; 
+    // 1. Blade Shape
+    float shape = 1.0 - pow(abs(vUv.x * 2.0 - 1.0), 2.5);
+    if (shape < 0.1) discard;
     
-    // Gradient from dark bottom to light top
-    vec3 color = mix(vColor * 0.5, vColor * 1.5, vUv.y);
+    // 2. Base Color Gradient (Roots darker)
+    vec3 color = mix(vColor * 0.1, vColor, smoothstep(0.0, 0.3, vUv.y));
+    color = mix(color, vColor * 1.4, smoothstep(0.5, 1.0, vUv.y));
     
-    // Add fake specular for "RTX" wet look
-    float specular = pow(vUv.y, 10.0) * 0.5;
-    color += vec3(specular);
-
-    gl_FragColor = vec4(color, 1.0);
+    // 3. Lighting Data
+    vec3 N = normalize(vNormal);
+    vec3 L = normalize(sunPosition);
+    vec3 V = normalize(vViewPosition);
+    vec3 H = normalize(L + V);
+    
+    // 4. Diffuse (Wrap lighting for softness)
+    float NdotL = dot(N, L);
+    float diffuse = max(NdotL, 0.0) * 0.7 + 0.3; // Half-lambert-ish
+    
+    // 5. Specular (Sun glint)
+    float spec = pow(max(dot(N, H), 0.0), 32.0) * 0.5;
+    
+    // 6. Translucency (RTX Style SSS)
+    // Light coming through the back of the blade
+    float backLight = max(dot(L, -V), 0.0);
+    float sss = pow(backLight, 8.0) * vUv.y * 1.5;
+    vec3 sssColor = vec3(1.0, 1.0, 0.6) * sss;
+    
+    // 7. Ambient Occlusion (Simulated deep grass darkening)
+    float ao = smoothstep(0.0, 0.4, vUv.y);
+    
+    // Compose
+    vec3 finalColor = color * diffuse;
+    finalColor += sssColor; // Glow adds to base
+    finalColor += vec3(spec); // Gloss on top
+    
+    finalColor *= ao; // Apply AO
+    
+    // Gamma (Approximation)
+    gl_FragColor = vec4(finalColor, 1.0);
   }
 `;
 
@@ -92,7 +136,9 @@ export class GrassSystem {
             fragmentShader,
             uniforms: {
                 time: { value: 0 },
-                windStrength: { value: 1.0 }
+                windStrength: { value: 1.0 },
+                sunPosition: { value: new THREE.Vector3(50, 50, 50) },
+                rtxEnabled: { value: 0.0 }
             },
             side: THREE.DoubleSide,
             transparent: false
@@ -176,10 +222,12 @@ export class GrassSystem {
         this.mesh.instanceMatrix.needsUpdate = true;
     }
 
-    update(time) {
+    update(time, sunPos, rtx) {
         if (this.material) {
             this.material.uniforms.time.value = time;
             this.material.uniforms.windStrength.value = this.windStrength;
+            if(sunPos) this.material.uniforms.sunPosition.value.copy(sunPos);
+            this.material.uniforms.rtxEnabled.value = rtx ? 1.0 : 0.0;
         }
     }
 
